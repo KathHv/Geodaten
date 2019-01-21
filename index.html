@@ -33,7 +33,7 @@
         }
 
         .dot {
-            fill: #ffab00;
+            fill: #4cff00;
             stroke: #fff;
         }
 
@@ -117,8 +117,8 @@
 
         // current projection
         var currentprojection = d3.geoMercator()
-            .center([0.0, 31.0])
-            .scale(150)
+            .center([7.6, 51.965])
+            .scale(60000)
             .translate([width / 2, height / 2]);
 
         // geopath
@@ -159,30 +159,29 @@
             .then(
                 function (dataset) {
 
-                    //console.log(dataset);
+                    //var countries = topojson.feature(dataset, dataset.objects.ne_50m_admin_0_countries).features;
+                    var districts = topojson.feature(dataset, dataset.objects.shapefile_m_nster_stadtteile).features;
+                    console.log(districts);
 
-                    var countries = topojson.feature(dataset, dataset.objects.ne_50m_admin_0_countries).features;
-
-                    console.log(countries);
-
-                    var centroids = countries.map(function (feature) {
+                    var centroids = districts.map(function (feature) {
                         return geopath.centroid(feature);
                     });
 
 
-                    d3.csv("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/UNWorldPopulationEstimates.csv")
+                    //d3.csv("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/UNWorldPopulationEstimates.csv")
+                    d3.json("https://raw.githubusercontent.com/KathHv/Geodaten/master/opensensemap_org-arithmeticMean-Temperatur-lat-lon-boxName-boxId-unit-20190121_071043.json")
                         .then(function (populationdataset) {
 
-
+                            console.log(populationdataset);
                             // delimiter for the parser
-                            var parser = d3.dsvFormat(";");
+                            //var parser = d3.dsvFormat(";");
 
                             // format the dataset as csv, and then use the parser to return the data elements
-                            var popdataset = parser.parse(d3.csvFormat(populationdataset));
-
-
+                            //var popdataset = parser.parse(d3.csvFormat(populationdataset));
+                            //var popdataset = topojson.feature(populationdataset, populationdataset.objects.shapefile_m_nster_stadtteile).features;
+                            var popdataset = populationdataset;
                             // data binding
-                            var countryshapes = d3.select("svg").selectAll("path").data(countries);
+                            var countryshapes = d3.select("svg").selectAll("path").data(districts);
 
                             // create paths
                             countryshapes.enter()
@@ -192,12 +191,42 @@
                                 .attr("fill", function (d, i) {
                                     return color(d.properties.ECONOMY);
                                 })
-                                .on("mouseover", function (d) {
+                            /*
+                            svg2.selectAll(".dot")
+                                .data(dataitem)
+                                .enter().append("circle")
+                                .attr("class", "dot")
+                                .attr("cx", function (d, i) {
+                                    console.log("point " + d[0] + " , " + d[1]);
+                                    return xScale(d[0]);
+                                })
+                                .attr("cy", function (d) { return yScale(d[1]) })
+                                .attr("r", 5);
+                                */
+                            var population = d3.select("svg").selectAll("circle").data(populationdataset);
+
+                            population.enter()
+                                .append("circle")
+                                .attr("d", geopath)
+                                .attr("class", "dot")
+                                .attr("cx", function (d, i) {
+                                    //console.log(d);
+                                    console.log("point " + d.lat + " , " + d.lon);
+                                    //return geopath(d.lat);
+                                    return d.lat;
+                                })
+                                .attr("cy", function (d) {
+                                    //console.log("point " + xScale(d.lat) + " , " + yScale(d.lon));
+                                    return d.lon
+                                    //return geopath(d.lon);
+                                })
+                                .attr("r", 5)
+                             .on("mouseover", function (d) {
                                     d3.select(this).classed("country hovered", true);
                                     div.style("display", "inline")
-                                    div.text(d.properties.NAME);
+                                    div.text(d.boxName);
                                     // create bars for the current country, using the country code as parameter
-                                    createLine(d.properties.UN_A3);
+                                    createLine(d.sensorId);
 
                                 })
                                 .on("mouseout", function (d) {
@@ -206,19 +235,19 @@
                                     div.style("display", "none");
                                     // clear the content of the svg
                                     svg2.selectAll("*").remove();
-
+                                    
                                 });
 
 
-                            function createLine(currentcountrycode) {
+                            function createLine(currentdistrictcode) {
 
-                                console.log("Current country code: " + currentcountrycode);
+                                console.log("Current sensor Id: " + currentdistrictcode);
 
                                 var currentcountry = new Object();
                                 //  console.log(currentcountry);
                                 popdataset.forEach(function (obj) {
 
-                                    if (parseInt(obj.country_code) == parseInt(currentcountrycode)) {
+                                    if (parseInt(obj.sensorId) == parseInt(currentdistrictcode)) {
                                         currentcountry = obj;
                                     }
 
@@ -240,13 +269,12 @@
 
                                     // creating scales and axes
                                     var xScale = d3.scaleTime()
-                                        .domain([new Date(1950, 1, 1), new Date(2015, 1, 1)]) //, "1975", "2000", "2005", "2010"
+                                        .domain([new Date(2019, 1, 9), new Date(2019, 1, 21)]) //, "1975", "2000", "2005", "2010"
                                         .range([0, width2]);
 
                                     var yScale = d3.scaleLinear()
                                         .domain([0, currentMaxPop])
                                         .range([height2, 0]);
-                                        //.range([0, height2]);
 
                                     var xAxis = d3.axisBottom(xScale);
 
@@ -258,16 +286,7 @@
                                     svg2.append("g").call(xAxis).attr("transform", "translate (0, " + height2 + ")");
                                     svg2.append("g").attr("class", "yAxis").call(yAxis).attr("transform", "translate (" + width2 + " , 0)");
 
-                                    svg2.selectAll(".dot")
-                                        .data(dataitem)
-                                        .enter().append("circle")
-                                        .attr("class", "dot")
-                                        .attr("cx", function (d, i) {
-                                            console.log("point " + d[0] + " , "+ d[1]);
-                                            return xScale(d[0]);
-                                        })
-                                        .attr("cy", function(d){ return yScale(d[1]) })
-                                        .attr("r", 5);
+                                    
                                     
 
                                     // create the line
@@ -309,15 +328,17 @@
 
                                 for (var key in rawdataobject) {
                                     // pick only values for some of the years
-                                    if (key == 1950 || key == 1975 || key == 2000 || key == 2005 || key == 2010 ||
-                                        key == 2015) {
+                                    if (key == new Date("2019-01-21T5:00:00.000Z") || key == "2019-01-19T10:00:00.000Z" || key == "2019-01-18T10:00:00.000Z" || key == "2019-01-17T10:00:00.000Z" || 
+                                        key == "2019-01-16T10:00:00.000Z" || key == "2019-01-15T10:00:00.000Z" || key == "2019-01-14T10:00:00.000Z" || key == "2019-01-13T10:00:00.000Z" ||
+                                        key == "2019-01-12T10:00:00.000Z" || key == "2019-01-11T10:00:00.000Z" || key == "2019-01-10T10:00:00.000Z") {
                                         // remove spaces from the string, and convert it to Float
                                         var value = parseFloat(rawdataobject[key].replace(/\s/g, ''));
                                         var temp = new Array(new Date(key), value);
-                                        //console.log(temp);
+                                        console.log(temp);
                                         formattedObject.push(temp);
                                     }
                                     else {
+                                        console.log("continue");
                                         continue;
                                     }
 
