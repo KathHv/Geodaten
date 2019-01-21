@@ -37,6 +37,7 @@
             stroke: #fff;
         }
 
+
         #infodiv {
             /*first three attributes: position of the div*/
             position: absolute;
@@ -153,7 +154,8 @@
             .attr("dy", ".35em")
             .text(function (d) { return d; });
 
-        d3.json("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/world_countries2.json")
+        //d3.json("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/world_countries2.json  ")
+        d3.json("https://raw.githubusercontent.com/KathHv/Geodaten/master/shapefile_m_nster_stadtteile.json")
             .then(
                 function (dataset) {
 
@@ -244,6 +246,7 @@
                                     var yScale = d3.scaleLinear()
                                         .domain([0, currentMaxPop])
                                         .range([height2, 0]);
+                                        //.range([0, height2]);
 
                                     var xAxis = d3.axisBottom(xScale);
 
@@ -255,46 +258,49 @@
                                     svg2.append("g").call(xAxis).attr("transform", "translate (0, " + height2 + ")");
                                     svg2.append("g").attr("class", "yAxis").call(yAxis).attr("transform", "translate (" + width2 + " , 0)");
 
-                                    svg.selectAll(".dot")
-                                        .data(dataset)
+                                    svg2.selectAll(".dot")
+                                        .data(dataitem)
                                         .enter().append("circle")
                                         .attr("class", "dot")
-                                        .attr("cx", function (d, i) { return xScale(i) })
-                                        .attr("cy", function(d){ return yScale(d.y) })
+                                        .attr("cx", function (d, i) {
+                                            console.log("point " + d[0] + " , "+ d[1]);
+                                            return xScale(d[0]);
+                                        })
+                                        .attr("cy", function(d){ return yScale(d[1]) })
                                         .attr("r", 5);
+                                    
 
                                     // create the line
-                                  
+
+                                    var line = d3.line()
+                                        .x(function (d) { return xScale(d[0]); })
+                                        .y(function (d) { return yScale(d[1]); });
+                                                 
+                                    var lineGraph = svg2.append("path")
+                                        .datum(dataitem)
+                                        .attr("class", "line")
+                                        .attr("stroke", "steelblue")
+                                        .attr("stroke-width", 2)
+                                        .attr("fill", "none")
+                                        .attr("d", line)
+
+                                    console.log(lineGraph);
+                                  /*
                                     var line = svg2.append("g").selectAll("path").data(dataitem);
                                     line.enter().append("path")
-                                        .attr("fill", "grey")
-                                        .attr("stroke", "steelblue")
-                                        .attr("stroke-linejoin", "round")
-                                        .attr("stroke-linecap", "round")
-                                        .attr("stroke-width", 1.5)
+                                        .attr("class", "line")
+                                       
                                         .attr("x", function (d, i) {
-                                            console.log(xScale(i));
-                                            return xScale(i);
-                                            //console.log(xScale(d[0]));
-                                            //return xScale(d[0]);
+                                            console.log("x: " + xScale(d[0]));
+                                            return (xScale(d[0]));
                                         })
                                         .attr("y", function (d, i) {
-                                            console.log(yScale(d[1]));
+                                            console.log("y: " + yScale(d[1]));
                                             return yScale(d[1]);
-
                                         })
                                         .attr("d", line);
-                                        
-                                        /*
-                                            .attr("width", xScale.bandwidth())
-                                            .attr("height", function (d) {
-                                                return height2 - yScale(d[1]);
-                                             });
-                                      
                                         */
                                 }
-
-
                             }
 
                             // go through the whole data item for a country, and only keep the values from
@@ -307,7 +313,7 @@
                                         key == 2015) {
                                         // remove spaces from the string, and convert it to Float
                                         var value = parseFloat(rawdataobject[key].replace(/\s/g, ''));
-                                        var temp = new Array(key, value);
+                                        var temp = new Array(new Date(key), value);
                                         //console.log(temp);
                                         formattedObject.push(temp);
                                     }
@@ -317,7 +323,7 @@
 
 
                                 }
-
+                                console.log(formattedObject);
                                 return formattedObject;
                             }
 
