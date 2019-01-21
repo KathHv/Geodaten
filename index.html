@@ -266,6 +266,7 @@
                                     //console.log(dataitem);
                                     var currentMinPop = d3.min(dataitem)[1];
                                     var currentMaxPop = d3.max(dataitem)[1];
+                                    var currentMaxPop = currentMinPop;
 
                                     // creating scales and axes
                                     var xScale = d3.scaleTime()
@@ -304,6 +305,8 @@
                                         .attr("d", line)
 
                                     console.log(lineGraph);
+                                    console.log(currentMaxPop);
+                                    console.log(currentMinPop);
                                   /*
                                     var line = svg2.append("g").selectAll("path").data(dataitem);
                                     line.enter().append("path")
@@ -328,12 +331,12 @@
 
                                 for (var key in rawdataobject) {
                                     // pick only values for some of the years
-                                    if (key == new Date("2019-01-21T5:00:00.000Z") || key == "2019-01-19T10:00:00.000Z" || key == "2019-01-18T10:00:00.000Z" || key == "2019-01-17T10:00:00.000Z" || 
+                                    if (key == "2019-01-21T05:00:00.000Z" || key == "2019-01-21T06:00:00.000Z" || key == "2019-01-18T10:00:00.000Z" || key == "2019-01-17T10:00:00.000Z" || 
                                         key == "2019-01-16T10:00:00.000Z" || key == "2019-01-15T10:00:00.000Z" || key == "2019-01-14T10:00:00.000Z" || key == "2019-01-13T10:00:00.000Z" ||
                                         key == "2019-01-12T10:00:00.000Z" || key == "2019-01-11T10:00:00.000Z" || key == "2019-01-10T10:00:00.000Z") {
                                         // remove spaces from the string, and convert it to Float
-                                        var value = parseFloat(rawdataobject[key].replace(/\s/g, ''));
-                                        var temp = new Array(new Date(key), value);
+                                        //var value = parseFloat(rawdataobject[key].replace(/\s/g, ''));
+                                        var temp = new Array(new Date(key), rawdataobject[key]);
                                         console.log(temp);
                                         formattedObject.push(temp);
                                     }
