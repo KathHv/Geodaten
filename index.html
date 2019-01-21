@@ -1,0 +1,367 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>D3 Abgabe 3</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+
+    <style>
+
+        .bubble {
+            fill: black;
+            fill-opacity: .5;
+            stroke: #fff;
+            stroke-width: 1px;
+        }
+
+        .country {
+            stroke: black;
+            stroke-width: 1px;
+        }
+
+            .country.hovered {
+                fill: grey;
+            }
+
+        .legend {
+            position: absolute;
+            top: 250px;
+            left: 10px;
+            font-style: italic;
+            font-size: 10px;
+        }
+
+        .dot {
+            fill: #ffab00;
+            stroke: #fff;
+        }
+
+        #infodiv {
+            /*first three attributes: position of the div*/
+            position: absolute;
+            top: 350px;
+            left: 480px;
+            /*Next two attributes: dimensions of the div*/
+            width: 130px;
+            height: 40px;
+            border-radius: 10px; /*rounding of the div*/
+            background: black; /*bakground color of the div*/
+            color: aliceblue; /*color of the text*/
+            text-align: center; /*centering the text*/
+            display: none; /*hide the div by default*/
+        }
+    </style>
+
+
+</head>
+
+<body>
+
+
+    <script type="text/javascript">
+
+        //Map of Muenster
+        //Shapefile from https://milchkuehe.carto.com/tables/shapefile_m_nster_stadtteile/public#/more
+        //Converted to topojson here https://mapshaper.org/
+
+
+
+
+        // Map of countries in the world
+
+        // shapefiles were taken from https://www.naturalearthdata.com/downloads/
+        // the conversion to topjson was done using https://mapshaper.org/
+
+        // svg margin parameters
+        var margin = { top: 20, right: 20, bottom: 20, left: 20 };
+        var width = 800 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
+
+        var width2 = 500 - margin.left - margin.right,
+            height2 = 400 - margin.top - margin.bottom;
+
+
+        // svg parameters
+        var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .style("background", "#ececec")
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // parameters of the svg for the line chart
+        var svg2 = d3.select("body").append("svg")
+            .attr("width", width2 + margin.left + margin.right)
+            .attr("height", height2 + margin.top + margin.bottom)
+            .style("background", "white")
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // div for the information
+        var div = d3.select("body").append("div")
+            .attr("id", "infodiv");
+
+        //  color scale
+        var color = d3.scaleOrdinal()
+            .domain(["7. Least developed region",
+                "6. Developing region",
+                "5. Emerging region: G20",
+                "4. Emerging region: MIKT",
+                "3. Emerging region: BRIC",
+                "2. Developed region: nonG7",
+                "1. Developed region: G7"])
+            .range(['#d53e4f', '#fc8d59', '#fee08b', '#ffffbf', '#e6f598', '#99d594', '#3288bd']);
+
+
+        // current projection
+        var currentprojection = d3.geoMercator()
+            .center([0.0, 31.0])
+            .scale(150)
+            .translate([width / 2, height / 2]);
+
+        // geopath
+        var geopath = d3.geoPath().projection(currentprojection);
+
+        // format number for human consumption
+        var formatNumber = d3.format(",.0f");
+
+        // Labels of the legend are the same as the domain of the color scale
+        var legend_labels = color.domain().reverse(); // reverse is optional
+
+        var legend = d3.select("body")
+            .append("svg")
+            .attr("width", 150)
+            .attr("height", 140)
+            .style("background", "#d6cbd3")
+            .attr("class", "legend")
+            .selectAll("g") // one group per label
+            .data(legend_labels)
+            .enter().append("g")
+            .attr("transform", function (d, i) { return "translate(0," + i * 20 + ")"; });
+
+        // create rectangles, one with the color
+        legend.append("rect")
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", color);
+
+        // add text, next to the rectangle about what the colors mean
+        legend.append("text")
+            .attr("x", 24)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .text(function (d) { return d; });
+
+        d3.json("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/world_countries2.json")
+            .then(
+                function (dataset) {
+
+                    //console.log(dataset);
+
+                    var countries = topojson.feature(dataset, dataset.objects.ne_50m_admin_0_countries).features;
+
+                    console.log(countries);
+
+                    var centroids = countries.map(function (feature) {
+                        return geopath.centroid(feature);
+                    });
+
+
+                    d3.csv("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/UNWorldPopulationEstimates.csv")
+                        .then(function (populationdataset) {
+
+
+                            // delimiter for the parser
+                            var parser = d3.dsvFormat(";");
+
+                            // format the dataset as csv, and then use the parser to return the data elements
+                            var popdataset = parser.parse(d3.csvFormat(populationdataset));
+
+
+                            // data binding
+                            var countryshapes = d3.select("svg").selectAll("path").data(countries);
+
+                            // create paths
+                            countryshapes.enter()
+                                .append("path")
+                                .attr("d", geopath)
+                                .attr("class", "country")
+                                .attr("fill", function (d, i) {
+                                    return color(d.properties.ECONOMY);
+                                })
+                                .on("mouseover", function (d) {
+                                    d3.select(this).classed("country hovered", true);
+                                    div.style("display", "inline")
+                                    div.text(d.properties.NAME);
+                                    // create bars for the current country, using the country code as parameter
+                                    createLine(d.properties.UN_A3);
+
+                                })
+                                .on("mouseout", function (d) {
+
+                                    d3.select(this).classed("country hovered", false);
+                                    div.style("display", "none");
+                                    // clear the content of the svg
+                                    svg2.selectAll("*").remove();
+
+                                });
+
+
+                            function createLine(currentcountrycode) {
+
+                                console.log("Current country code: " + currentcountrycode);
+
+                                var currentcountry = new Object();
+                                //  console.log(currentcountry);
+                                popdataset.forEach(function (obj) {
+
+                                    if (parseInt(obj.country_code) == parseInt(currentcountrycode)) {
+                                        currentcountry = obj;
+                                    }
+
+                                });
+
+                                if (currentcountry == undefined || currentcountry == null || Object.keys(currentcountry).length === 0) {
+                                    console.log("No information available for this country");
+                                    svg2.append("text").text("No information available for this country");
+                                }
+                                else {
+
+                                    console.log(currentcountry);
+
+                                    // retrieve information about the current country
+                                    var dataitem = formatObject(currentcountry);
+                                    //console.log(dataitem);
+                                    var currentMinPop = d3.min(dataitem)[1];
+                                    var currentMaxPop = d3.max(dataitem)[1];
+
+                                    // creating scales and axes
+                                    var xScale = d3.scaleTime()
+                                        .domain([new Date(1950, 1, 1), new Date(2015, 1, 1)]) //, "1975", "2000", "2005", "2010"
+                                        .range([0, width2]);
+
+                                    var yScale = d3.scaleLinear()
+                                        .domain([0, currentMaxPop])
+                                        .range([height2, 0]);
+
+                                    var xAxis = d3.axisBottom(xScale);
+
+                                    var yAxis = d3.axisLeft(yScale)
+                                        .tickValues([currentMaxPop / 4, currentMaxPop / 3, currentMaxPop / 2, currentMaxPop]) // four values on the axis
+                                        .tickFormat(d3.formatPrefix(",.0", 1e3)) //format of values on the axis;
+
+                                    // add axes to the svg element
+                                    svg2.append("g").call(xAxis).attr("transform", "translate (0, " + height2 + ")");
+                                    svg2.append("g").attr("class", "yAxis").call(yAxis).attr("transform", "translate (" + width2 + " , 0)");
+
+                                    svg.selectAll(".dot")
+                                        .data(dataset)
+                                        .enter().append("circle")
+                                        .attr("class", "dot")
+                                        .attr("cx", function (d, i) { return xScale(i) })
+                                        .attr("cy", function(d){ return yScale(d.y) })
+                                        .attr("r", 5);
+
+                                    // create the line
+                                  
+                                    var line = svg2.append("g").selectAll("path").data(dataitem);
+                                    line.enter().append("path")
+                                        .attr("fill", "grey")
+                                        .attr("stroke", "steelblue")
+                                        .attr("stroke-linejoin", "round")
+                                        .attr("stroke-linecap", "round")
+                                        .attr("stroke-width", 1.5)
+                                        .attr("x", function (d, i) {
+                                            console.log(xScale(i));
+                                            return xScale(i);
+                                            //console.log(xScale(d[0]));
+                                            //return xScale(d[0]);
+                                        })
+                                        .attr("y", function (d, i) {
+                                            console.log(yScale(d[1]));
+                                            return yScale(d[1]);
+
+                                        })
+                                        .attr("d", line);
+                                        
+                                        /*
+                                            .attr("width", xScale.bandwidth())
+                                            .attr("height", function (d) {
+                                                return height2 - yScale(d[1]);
+                                             });
+                                      
+                                        */
+                                }
+
+
+                            }
+
+                            // go through the whole data item for a country, and only keep the values from
+                            var formatObject = function (rawdataobject) {
+                                var formattedObject = new Array();
+
+                                for (var key in rawdataobject) {
+                                    // pick only values for some of the years
+                                    if (key == 1950 || key == 1975 || key == 2000 || key == 2005 || key == 2010 ||
+                                        key == 2015) {
+                                        // remove spaces from the string, and convert it to Float
+                                        var value = parseFloat(rawdataobject[key].replace(/\s/g, ''));
+                                        var temp = new Array(key, value);
+                                        //console.log(temp);
+                                        formattedObject.push(temp);
+                                    }
+                                    else {
+                                        continue;
+                                    }
+
+
+                                }
+
+                                return formattedObject;
+                            }
+
+
+
+
+                        }),
+
+                        function (error) {
+                            console.log(error);
+
+                        }
+                    /*
+
+                      // https://d3indepth.com/geographic/ [choice of right parameters for scaling]
+
+                      // https://github.com/d3/d3-geo [path.centroid]
+
+                      // DIV Formatting: https://stackoverflow.com/questions/8865458/vertically-center-text-with-css
+
+                      // Legend: code taken, and slightly modified from https://bl.ocks.org/mbostock/3888852
+
+                      // Bubble map ideas adapted from https://bl.ocks.org/mbostock/9943478
+
+                      // Small entry on scaleSqrt() https://bl.ocks.org/d3indepth/775cf431e64b6718481c06fc45dc34f9
+
+                      // d3 format: format numbers for human consumption https://github.com/d3/d3-format
+
+                      */
+                },
+
+
+                function (error) {
+                    console.log(error);
+                }
+            );
+
+
+    </script>
+
+</body>
+
+</html>
+
+
+
+
