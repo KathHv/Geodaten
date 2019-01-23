@@ -107,9 +107,35 @@
         // format number for human consumption
         var formatNumber = d3.format(",.0f");
 
-        
-        //d3.json("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/world_countries2.json  ")
-        d3.json("https://raw.githubusercontent.com/KathHv/Geodaten/master/shapefile_m_nster_stadtteile.json")
+        // Labels of the legend are the same as the domain of the color scale
+        var legend_labels = color.domain().reverse(); // reverse is optional
+
+        var legend = d3.select("body")
+            .append("svg")
+            .attr("width", 150)
+            .attr("height", 140)
+            .style("background", "#d6cbd3")
+            .attr("class", "legend")
+            .selectAll("g") // one group per label
+            .data(legend_labels)
+            .enter().append("g")
+            .attr("transform", function (d, i) { return "translate(0," + i * 20 + ")"; });
+
+        // create rectangles, one with the color
+        legend.append("rect")
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", color);
+
+        // add text, next to the rectangle about what the colors mean
+        legend.append("text")
+            .attr("x", 24)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .text(function (d) { return d; });
+
+        d3.json("https://raw.githubusercontent.com/aurioldegbelo/Geovis2018/master/world_countries2.json  ")
+        //d3.json("https://raw.githubusercontent.com/KathHv/Geodaten/master/shapefile_m_nster_stadtteile.json")
             .then(
                 function (dataset) {
 
