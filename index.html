@@ -205,13 +205,13 @@
 
                                     console.log("width2: " + width2);
                                     var yScale = d3.scaleLinear()
-                                        .domain([0, currentMaxSensebox])
+                                        .domain([750, currentMaxSensebox+50])
                                         .range([height2, 0]);
                                     //set axes
                                     var xAxis = d3.axisBottom(xScale);
 
                                     var yAxis = d3.axisLeft(yScale)
-                                        .tickValues([currentMaxSensebox / 4, currentMaxSensebox / 3, currentMaxSensebox / 2, currentMaxSensebox]) // four values on the axis
+                                        .tickValues([1050, 1040, 1030, 1020, 1010, 1000, 990, 980, 950, 900, 850, 800]) // values on the axis
 
                                     // add axes to the svg element
                                     svg2.append("g")
