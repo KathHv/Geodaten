@@ -200,8 +200,8 @@
                                     // creating scales and axes
                                     //set range of the axes
                                     var xScale = d3.scaleTime()
-                                        .domain([new Date(2019, 1, 14), new Date(2019, 1, 19)]) //, "1975", "2000", "2005", "2010"
-                                        .range([0, 1]);
+                                        .domain([new Date(2019,0,15,00,00,00), new Date(2019,0,19,00,00,00)]) //, "1975", "2000", "2005", "2010"
+                                        .range([0, width2]);
 
                                     console.log("width2: " + width2);
                                     var yScale = d3.scaleLinear()
@@ -222,21 +222,6 @@
                                         .attr("class", "yAxis")
                                         .call(yAxis)
                                         .attr("transform", "translate (" + width2 + " , 0)");
-
-                                    //dots for a better visualization in the graph
-                                    /*
-                                    svg2.selectAll(".dot")
-                                        .data(dataitem)
-                                        .enter().append("circle")
-                                        .attr("class", "dot")
-                                        .attr("cx", function (d, i) {
-                                            console.log("point " + d[0] + " , " + d[1]);
-                                            console.log("point " + xScale(d[0]) + " , " + yScale(d[1]));
-                                            return xScale(d[0]);
-                                        })
-                                        .attr("cy", function(d){ return yScale(d[1]) })
-                                        .attr("r", 5);
-                                        */
 
 
                                     // create the line
